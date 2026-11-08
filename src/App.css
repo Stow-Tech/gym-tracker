@@ -337,3 +337,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 .green { color: #16a34a; }
 .orange { color: #ea580c; }
+/* Registro por serie, peso con unidad y aviso de fecha */
+.weight-row { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 8px; }
+.weight-row label, .set-label { font-size: 11px; color: #888780; display: block; margin-bottom: 3px; }
+.weight-row input, .weight-row select { width: 100%; padding: 6px 8px; border: 0.5px solid #d3d1c7; border-radius: 6px; font-size: 14px; background: #f5f4f0; color: #1a1a18; -webkit-text-fill-color: #1a1a18; }
+.set-inputs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.set-inputs input { width: 52px; padding: 6px 4px; text-align: center; border: 0.5px solid #d3d1c7; border-radius: 6px; font-size: 14px; background: #f5f4f0; color: #1a1a18; -webkit-text-fill-color: #1a1a18; }
+.add-set { width: 36px; border-radius: 6px; border: 0.5px dashed #b4b2a9; background: transparent; color: #5f5e5a; font-size: 18px; cursor: pointer; }
+.date-warn { font-size: 12px; color: #993C1D; margin: -8px 0 12px; }
+.month-select { display: flex; gap: 8px; justify-content: center; }

@@ -60,9 +60,11 @@ export default function App() {
             Day: session.day_key,
             Exercise: log.exercise_name,
             Completed: log.completed ? 'Yes' : 'No',
-            'KG Used': log.kg_used || '',
+            Weight: log.kg_used ?? '',
+            Unit: log.unit || 'kg',
             Sets: log.sets_done || '',
-            Reps: log.reps_done || '',
+            'Reps per set': Array.isArray(log.set_reps) ? log.set_reps.join('/') : '',
+            'Reps (avg)': log.reps_done || '',
             Notes: log.notes || '',
           })
         }

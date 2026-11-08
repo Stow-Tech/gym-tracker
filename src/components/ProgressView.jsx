@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
-import { workoutPlan } from '../workoutData'
+import { dayInfo } from '../workoutData'
+import { describeSets, describeWeight } from '../units'
 
 const MONTHS = ['January','February','March','April','May','June',
   'July','August','September','October','November','December']
@@ -8,52 +9,61 @@ const MONTHS = ['January','February','March','April','May','June',
 export default function ProgressView({ user }) {
   const now = new Date()
   const [month, setMonth] = useState(now.getMonth())
+  const [year, setYear] = useState(now.getFullYear())
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => { fetchSessions() }, [month])
-
   async function fetchSessions() {
-  setLoading(true)
-  const y = 2026
-  const from = `${y}-${String(month + 1).padStart(2, '0')}-01`
-  const lastDay = new Date(y, month + 1, 0).getDate()
-const to = `${y}-${String(month + 1).padStart(2, '0')}-${lastDay}`
-  
-  const { data: sessionsData, error: sErr } = await supabase
-    .from('workout_sessions')
-    .select('*')
-    .eq('user_id', user.id)
-    .gte('date', from)
-    .lte('date', to)
-    .order('date', { ascending: false })
+    setLoading(true)
+    const mm = String(month + 1).padStart(2, '0')
+    const from = `${year}-${mm}-01`
+    const lastDay = String(new Date(year, month + 1, 0).getDate()).padStart(2, '0')
+    const to = `${year}-${mm}-${lastDay}`
 
-  if (sErr) { setLoading(false); return }
+    const { data: sessionsData, error: sErr } = await supabase
+      .from('workout_sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: false })
 
-  const sessionsWithLogs = await Promise.all(
-    (sessionsData || []).map(async (session) => {
+    if (sErr) { setLoading(false); return }
+
+    // Una sola consulta para todos los ejercicios del mes (antes era una por sesión).
+    const ids = (sessionsData || []).map(s => s.id)
+    let logsBySession = {}
+    if (ids.length) {
       const { data: logs } = await supabase
         .from('exercise_logs')
         .select('*')
-        .eq('session_id', session.id)
-      return { ...session, exercise_logs: logs || [] }
-    })
-  )
+        .in('session_id', ids)
+      ;(logs || []).forEach(l => {
+        ;(logsBySession[l.session_id] = logsBySession[l.session_id] || []).push(l)
+      })
+    }
 
-  setSessions(sessionsWithLogs)
-  setLoading(false)
-}
+    setSessions((sessionsData || []).map(s => ({ ...s, exercise_logs: logsBySession[s.id] || [] })))
+    setLoading(false)
+  }
+
+  useEffect(() => { fetchSessions() }, [month, year])
 
   const totalDone = sessions.reduce((a, s) =>
     a + (s.exercise_logs?.filter(l => l.completed).length || 0), 0)
+
+  const years = [year - 1, year, year + 1].filter(y => y >= 2026)
 
   return (
     <div>
       <div className="month-select">
         <select value={month} onChange={e => setMonth(Number(e.target.value))}>
           {MONTHS.map((m, i) => (
-            <option key={m} value={i}>{m} 2026</option>
+            <option key={m} value={i}>{m}</option>
           ))}
+        </select>
+        <select value={year} onChange={e => setYear(Number(e.target.value))}>
+          {years.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
       </div>
 
@@ -71,14 +81,14 @@ const to = `${y}-${String(month + 1).padStart(2, '0')}-${lastDay}`
       {loading && <div className="empty-state">Loading...</div>}
       {!loading && sessions.length === 0 && (
         <div className="empty-state">
-          No sessions in {MONTHS[month]}.<br />Start training and save your progress!
+          No sessions in {MONTHS[month]} {year}.<br />Start training and save your progress!
         </div>
       )}
 
       {sessions.map(session => {
         const logs = session.exercise_logs || []
         const done = logs.filter(l => l.completed)
-        const day = workoutPlan[session.day_key]
+        const day = dayInfo(session.day_key, session.date)
         return (
           <div key={session.id} className="session-card">
             <div className="session-header">
@@ -88,16 +98,20 @@ const to = `${y}-${String(month + 1).padStart(2, '0')}-${lastDay}`
               </div>
               <div className="session-count">{done.length}/{logs.length}</div>
             </div>
-            {done.map(log => (
-              <div key={log.id} className="session-ex-row">
-                <span>✓ {log.exercise_name}</span>
-                <span className="session-ex-meta">
-                  {log.kg_used ? `${log.kg_used}kg` : ''}
-                  {log.sets_done ? ` · ${log.sets_done}×${log.reps_done}` : ''}
-                  {log.notes ? ` — ${log.notes}` : ''}
-                </span>
-              </div>
-            ))}
+            {done.map(log => {
+              const weight = describeWeight(log)
+              const sets = describeSets(log)
+              const parts = [weight, sets].filter(Boolean).join(' · ')
+              return (
+                <div key={log.id} className="session-ex-row">
+                  <span>✓ {log.exercise_name}</span>
+                  <span className="session-ex-meta">
+                    {parts}
+                    {log.notes ? `${parts ? ' — ' : ''}${log.notes}` : ''}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         )
       })}
