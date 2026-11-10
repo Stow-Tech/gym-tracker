@@ -35,7 +35,7 @@ export const workoutPlan = {
     sections: [
       { title: 'Back', exercises: [
         { name: 'Pull-Ups or Lat Pulldown', sets: 3, reps: '8–12', rest: '2 min' },
-        { name: 'Heavy Barbell Row', sets: 3, reps: '8–10', rest: '2–3 min' },
+        { name: 'Cable Row', sets: 3, reps: '10–12', rest: '90s' },
       ]},
       { title: 'Biceps', exercises: [
         { name: 'Heavy Barbell Curl', sets: 3, reps: '8–10', rest: '90s' },
