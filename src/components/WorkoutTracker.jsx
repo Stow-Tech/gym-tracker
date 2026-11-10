@@ -285,6 +285,10 @@ export default function WorkoutTracker({ user }) {
         ))}
       </div>
 
+      <div className="exercise-rest-note">
+        Rest between sets is shown on each exercise: longer on the big lifts, shorter on arms and forearms.
+      </div>
+
       <div className="date-row">
         <span className="date-label">Date:</span>
         <input type="date" value={date} onChange={e => setDate(e.target.value)} />
